@@ -29,6 +29,10 @@ my $imageURL = $1;
 # replace the ".." in the URL with "http://www.thecatlow.com" for the absolute filepath
 $imageURL =~ s/\.\./http:\/\/www\.thecatlow\.com/;
 
+$curlResult =~ m/<p><span class="mainBoldRed">Synopsis:<\/span><br \/>(.*?)<\/p>/s;
+my $movieSynopsis = $1;
+$movieSynopsis =~ s/\s+/ /g;
+
 # retrieve the list of email recipients
 open RECIPIENTS_FILE, "recipients.txt" || print "Error: $!\n";
 # Each line of the file represents an address
@@ -46,12 +50,15 @@ my $htmlMailMessage = <<END_HTML;
 
 <div style="display:block; width:400px; text-align:center; margin:auto; font-size:50px; color:#222; font-family:'Amethysta', Georgia, serif;">
 <img src="$imageURL" /><br />
-<p>$moviePlaying</p>
+<p style="margin-top: 10px; margin-bottom:10px;">$moviePlaying</p>
+<p style="text-align: left; font-size: 16px;">$movieSynopsis</p>
 </div>
+
+<p style="color:#888; margin-top: 30px;">This automated message is not affiliated with The Catlow theater in any way. If you would like to be taken off of this mailing list, please email: aapierce0\@gmail.com.</p>
 </html>
 END_HTML
 
-%mail = ( To      => join(", ",@recipients),
+%mail = (BCC    => join(", ",@recipients),
 		From    => 'nowplaying@thecatlow.com',
 		'content-type' => 'text/html; charset="iso-8859-1"',
 		Subject => "Now Playing at The Catlow: $moviePlaying",
