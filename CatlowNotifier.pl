@@ -1,4 +1,9 @@
-print "\n\n";
+use FindBin;
+open CATLOW_LOG, ">>$FindBin::Bin/log.txt" || print "Error: $!\n";
+use POSIX qw(strftime);
+my $nowString = strftime "%a %b %e %H:%M:%S %Y", localtime;
+print CATLOW_LOG $nowString."\n\n";
+
 
 use Mail::Sendmail;
 
@@ -10,16 +15,18 @@ $curlResult =~ m/<h2><span class="descrpmovieTitle">(.*?)<\/span><\/h2>/;
 my $moviePlaying = $1;
 
 # Check to see if we've already sent an email about this movie.
-open EXPIRED_MOVIE_FILE, "previousMovie.txt" || print "Error: $!\n";
+open EXPIRED_MOVIE_FILE, "$FindBin::Bin/previousMovie.txt" || print CATLOW_LOG "Error: $!\n";
 my @expiredMovies = <EXPIRED_MOVIE_FILE>;
 chomp @expiredMovies;
 close EXPIRED_MOVIE_FILE;
 if ($expiredMovies[0] eq $moviePlaying) {
-	die "Recipients have already been notified of $moviePlaying. No email sent.\n\n";
+	print CATLOW_LOG "Recipients have already been notified of $moviePlaying. No email sent.";
+	print CATLOW_LOG "\n\n=========================\n\n";
+	die;
 }
 
 # We have not sent an email about this movie, so we overwite the file with the current movie, and send an email
-open EXPIRED_MOVIE_FILE, ">previousMovie.txt" || print "Error: $!\n";
+open EXPIRED_MOVIE_FILE, ">$FindBin::Bin/previousMovie.txt" || print CATLOW_LOG "Error: $!\n";
 print EXPIRED_MOVIE_FILE $moviePlaying;
 close EXPIRED_MOVIE_FILE;
 
@@ -34,7 +41,7 @@ my $movieSynopsis = $1;
 $movieSynopsis =~ s/\s+/ /g;
 
 # retrieve the list of email recipients
-open RECIPIENTS_FILE, "recipients.txt" || print "Error: $!\n";
+open RECIPIENTS_FILE, "$FindBin::Bin/recipients.txt" || print CATLOW_LOG "Error: $!\n";
 # Each line of the file represents an address
 my @recipients = <RECIPIENTS_FILE>;
 chomp @recipients;
@@ -69,8 +76,8 @@ $mail{body} = <<END_OF_BODY;
 <html>$htmlMailMessage</html>
 END_OF_BODY
 
-sendmail(%mail) || print "Error: $Mail::Sendmail::error\n";
+sendmail(%mail) || print CATLOW_LOG "Error: $Mail::Sendmail::error\n";
 
-print "OK. Log says:\n", $Mail::Sendmail::log;
-
-print "\n\n";
+print CATLOW_LOG "OK. Log says:\n", $Mail::Sendmail::log;
+print CATLOW_LOG "\n\n=========================\n\n";
+close CATLOW_LOG;
