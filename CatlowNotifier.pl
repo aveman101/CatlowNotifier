@@ -9,6 +9,20 @@ my $curlResult = `curl -s http://thecatlow.com/html/showtimes.html`;
 $curlResult =~ m/<h2><span class="descrpmovieTitle">(.*?)<\/span><\/h2>/;
 my $moviePlaying = $1;
 
+# Check to see if we've already sent an email about this movie.
+open EXPIRED_MOVIE_FILE, "previousMovie.txt" || print "Error: $!\n";
+my @expiredMovies = <EXPIRED_MOVIE_FILE>;
+chomp @expiredMovies;
+close EXPIRED_MOVIE_FILE;
+if ($expiredMovies[0] eq $moviePlaying) {
+	die "Recipients have already been notified of $moviePlaying. No email sent.\n\n";
+}
+
+# We have not sent an email about this movie, so we overwite the file with the current movie, and send an email
+open EXPIRED_MOVIE_FILE, ">previousMovie.txt" || print "Error: $!\n";
+print EXPIRED_MOVIE_FILE $moviePlaying;
+close EXPIRED_MOVIE_FILE;
+
 # Attempt to locate the poster URL for the movie currently playing
 $curlResult =~ m/<div id="poster_feature"><img src="(.*?)".*?>/;
 my $imageURL = $1;
@@ -17,10 +31,10 @@ $imageURL =~ s/\.\./http:\/\/www\.thecatlow\.com/;
 
 # retrieve the list of email recipients
 open RECIPIENTS_FILE, "recipients.txt" || print "Error: $!\n";
-
 # Each line of the file represents an address
 my @recipients = <RECIPIENTS_FILE>;
 chomp @recipients;
+close RECIPIENTS_FILE;
 
 # Make the mail message
 my $htmlMailMessage = <<END_HTML;
