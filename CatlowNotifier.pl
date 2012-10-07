@@ -77,7 +77,7 @@ foreach (@recipients) {
 			Data    => "<html>$htmlMailMessage</html>",
 			Type 	=> "text/html"
 		);
-		# sendmail($email);
+		sendmail($email);
 		print CATLOW_LOG "notification sent to $recipient\n";
 	} catch {
 		print CATLOW_LOG "sending to $recipient failed: $_\n";
