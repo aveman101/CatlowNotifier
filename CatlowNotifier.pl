@@ -67,16 +67,22 @@ my $htmlMailMessage = <<END_HTML;
 </html>
 END_HTML
 
+foreach (@recipients) {
+	my $recipient = $_;
+	try {
+		my $email = MIME::Entity->build(
+			From    => 'nowplaying@thecatlow.com',
+			To		=> $recipient,
+			Subject => "Now Playing at The Catlow: $moviePlaying",
+			Data    => "<html>$htmlMailMessage</html>",
+			Type 	=> "text/html"
+		);
+		# sendmail($email);
+		print CATLOW_LOG "notification sent to $recipient\n";
+	} catch {
+		print CATLOW_LOG "sending to $recipient failed: $_\n";
+	};
+}
 
-my $email = MIME::Entity->build(
-	From    => 'nowplaying@thecatlow.com',
-	To      => join(", ",@recipients),
-	Subject => "Now Playing at The Catlow: $moviePlaying",
-	Data    => "<html>$htmlMailMessage</html>",
-	Type 	=> "text/html"
-);
-sendmail($email) or print CATLOW_LOG "Error: $Mail::Sendmail::error\n";
-
-print CATLOW_LOG "OK. Log says:\n", $Mail::Sendmail::log;
 print CATLOW_LOG "\n\n=========================\n\n";
 close CATLOW_LOG;
