@@ -4,8 +4,10 @@ use POSIX qw(strftime);
 my $nowString = strftime "%a %b %e %H:%M:%S %Y", localtime;
 print CATLOW_LOG $nowString."\n\n";
 
-
-use Mail::Sendmail;
+use Email::MIME;
+use Email::Sender::Simple qw(sendmail);
+use Email::Sender::Transport::SMTP qw();
+use Try::Tiny;
 
 # Get the HTML of The Catlow's showtimes
 my $curlResult = `curl -s http://thecatlow.com/html/showtimes.html`;
@@ -65,18 +67,15 @@ my $htmlMailMessage = <<END_HTML;
 </html>
 END_HTML
 
-%mail = (BCC    => join(", ",@recipients),
-		From    => 'nowplaying@thecatlow.com',
-		'content-type' => 'text/html; charset="iso-8859-1"',
-		Subject => "Now Playing at The Catlow: $moviePlaying",
-		Body => $htmlMailMessage
-		);
 
-$mail{body} = <<END_OF_BODY;
-<html>$htmlMailMessage</html>
-END_OF_BODY
-
-sendmail(%mail) || print CATLOW_LOG "Error: $Mail::Sendmail::error\n";
+my $email = MIME::Entity->build(
+	From    => 'nowplaying@thecatlow.com',
+	To      => join(", ",@recipients),
+	Subject => "Now Playing at The Catlow: $moviePlaying",
+	Data    => "<html>$htmlMailMessage</html>",
+	Type 	=> "text/html"
+);
+sendmail($email) or print CATLOW_LOG "Error: $Mail::Sendmail::error\n";
 
 print CATLOW_LOG "OK. Log says:\n", $Mail::Sendmail::log;
 print CATLOW_LOG "\n\n=========================\n\n";
